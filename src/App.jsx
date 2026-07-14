@@ -1,0 +1,1551 @@
+import { useState, useMemo, useEffect } from 'react';
+// ── 아이콘 ──
+const Icon = ({ size = 16, className = '', children }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+);
+const CheckIcon = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5"/></Icon>;
+const ChevronDown = (p) => <Icon {...p}><path d="m6 9 6 6 6-6"/></Icon>;
+const ArrowLeft = (p) => <Icon {...p}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></Icon>;
+const ExternalLink = (p) => <Icon {...p}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></Icon>;
+const RefreshCw = (p) => <Icon {...p}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></Icon>;
+const Sparkles = (p) => <Icon {...p}><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></Icon>;
+const Github = (p) => <Icon {...p}><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5a5.4 5.4 0 0 0-1 3.5c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></Icon>;
+const FlaskConical = (p) => <Icon {...p}><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></Icon>;
+const FileIcon = (p) => <Icon {...p}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></Icon>;
+const PenIcon = (p) => <Icon {...p}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></Icon>;
+const CodeIcon = (p) => <Icon {...p}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></Icon>;
+const XIcon = (p) => <Icon {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>;
+const LockIcon = (p) => <Icon {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></Icon>;
+const SendIcon = (p) => <Icon {...p}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></Icon>;
+const BookIcon = (p) => <Icon {...p}><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></Icon>;
+const FolderIcon = (p) => <Icon {...p}><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></Icon>;
+const PlusIcon = (p) => <Icon {...p}><path d="M5 12h14"/><path d="M12 5v14"/></Icon>;
+
+// ── 데모 데이터 ──
+const DEMO_PR_INFO = {
+  title: 'feat: 로그인 폼 유효성 검사 추가',
+  number: 42,
+  user: { login: 'hyeoni-dev' },
+  html_url: 'https://github.com/demo/repo/pull/42'
+};
+
+const DEMO_COMMENTS = [
+  {
+    id: 1,
+    path: 'src/components/LoginForm.tsx',
+    line: 24,
+    user: { login: 'senior-reviewer' },
+    body: 'P3: 변수명이 snake_case로 되어 있어요. 프로젝트 컨벤션에 맞게 camelCase로 통일해주세요.',
+    created_at: '2026-07-13T10:12:00Z',
+    diff_hunk: "@@ -20,8 +20,12 @@ export function LoginForm() {\n-  const user_email = useState('');\n+  const [user_email, set_user_email] = useState('');\n+  const [is_valid, set_is_valid] = useState(false);\n\n   const handleSubmit = async () => {",
+    html_url: 'https://github.com/demo/repo/pull/42#discussion_r1'
+  },
+  {
+    id: 2,
+    path: 'src/components/LoginForm.tsx',
+    line: 45,
+    user: { login: 'senior-reviewer' },
+    body: 'P2: 에러 메시지가 시스템 에러를 그대로 노출하고 있어요. 사용자 친화적인 메시지로 바꿔주세요.',
+    created_at: '2026-07-13T10:25:00Z',
+    diff_hunk: "@@ -42,6 +42,9 @@ export function LoginForm() {\n   } catch (error) {\n-    alert(error.message);\n+    alert('Error: ' + error.stack);\n   }",
+    html_url: 'https://github.com/demo/repo/pull/42#discussion_r2'
+  },
+  {
+    id: 3,
+    path: 'src/utils/validation.ts',
+    line: 12,
+    user: { login: 'teammate-kim' },
+    body: '이 유효성 검사 로직이 SignupForm에도 중복으로 있어요. 공통 훅으로 추출하면 좋을 것 같아요.',
+    created_at: '2026-07-14T09:05:00Z',
+    diff_hunk: "@@ -8,10 +8,14 @@\n+export function validateEmail(email) {\n+  const regex = /^[^@]+@[^@]+\\.[^@]+$/;\n+  return regex.test(email);\n+}",
+    html_url: 'https://github.com/demo/repo/pull/42#discussion_r3'
+  },
+  {
+    id: 4,
+    path: 'src/api/auth.ts',
+    line: 30,
+    user: { login: 'teammate-kim' },
+    body: 'P1: await에 try/catch가 없어서 네트워크 실패 시 앱이 죽을 수 있어요. 예외 처리 부탁드려요!',
+    created_at: '2026-07-13T18:40:00Z',
+    diff_hunk: "@@ -27,6 +27,8 @@ export async function login(credentials) {\n+  const response = await fetch('/api/login', {\n+    method: 'POST',\n+    body: JSON.stringify(credentials)\n+  });\n+  return response.json();",
+    html_url: 'https://github.com/demo/repo/pull/42#discussion_r4'
+  },
+  {
+    id: 8,
+    path: 'src/utils/validation.ts',
+    line: 3,
+    user: { login: 'senior-reviewer' },
+    body: '정규식을 따로 빼둔 것 깔끔하네요! LGTM 👍',
+    diff_hunk: "@@ -1,5 +1,8 @@\n+// 이메일 유효성 검사 유틸\n+export function validateEmail(email) {",
+    created_at: '2026-07-14T10:00:00Z',
+    html_url: 'https://github.com/demo/repo/pull/42#discussion_r5'
+  },
+  // 스레드 답글 (in_reply_to_id로 루트 코멘트에 연결됨)
+  {
+    id: 5,
+    in_reply_to_id: 1,
+    user: { login: 'hyeoni-dev' },
+    body: '넵! camelCase로 수정했습니다 🙌',
+    created_at: '2026-07-13T11:02:00Z'
+  },
+  {
+    id: 6,
+    in_reply_to_id: 2,
+    user: { login: 'hyeoni-dev' },
+    body: '공통 에러 메시지 유틸로 빼서 적용해볼게요. 문구는 기획팀에 확인 요청했습니다.',
+    created_at: '2026-07-13T11:10:00Z'
+  },
+  {
+    id: 7,
+    in_reply_to_id: 2,
+    user: { login: 'senior-reviewer' },
+    body: '좋아요. 문구 확정되면 상수로 관리해주세요!',
+    created_at: '2026-07-13T13:45:00Z'
+  }
+];
+
+// 학습 주제 카탈로그 — 리뷰 코멘트·메모에서 키워드가 감지되면 추천됨
+const STUDY_TOPICS = [
+  {
+    key: 'naming',
+    title: '네이밍 컨벤션',
+    words: ['네이밍', 'naming', '변수명', '함수명', '컨벤션', 'camel', 'snake', '파스칼', '케이스', '명명'],
+    desc: '일관된 이름 짓기는 코드 가독성의 기본이에요. 팀 컨벤션과 널리 쓰이는 스타일 가이드를 익혀보세요.',
+    links: [
+      { label: 'Airbnb JavaScript 스타일 가이드', url: 'https://github.com/airbnb/javascript' },
+      { label: 'Clean Code JavaScript (한글)', url: 'https://github.com/qkraudghgh/clean-code-javascript-ko' }
+    ]
+  },
+  {
+    key: 'error',
+    title: '에러 핸들링',
+    words: ['에러', 'error', '예외', 'exception', 'try', 'catch', '에러 메시지'],
+    desc: '사용자 친화적인 에러 메시지와 일관된 예외 처리 전략을 공부해보세요.',
+    links: [
+      { label: 'MDN — 제어 흐름과 에러 처리', url: 'https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Control_flow_and_error_handling' },
+      { label: 'MDN — try...catch', url: 'https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Statements/try...catch' }
+    ]
+  },
+  {
+    key: 'async',
+    title: '비동기 처리',
+    words: ['비동기', 'async', 'await', 'promise', 'fetch'],
+    desc: 'async/await의 에러 처리, 병렬 실행, 레이스 컨디션까지 비동기 패턴을 정리해보세요.',
+    links: [
+      { label: 'JavaScript.info — async/await (한글)', url: 'https://ko.javascript.info/async-await' },
+      { label: 'MDN — async function', url: 'https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Statements/async_function' }
+    ]
+  },
+  {
+    key: 'refactor',
+    title: '리팩터링 & 코드 중복 제거',
+    words: ['중복', '리팩터', 'refactor', '재사용', '추출', '분리', '책임', 'srp', '훅으로'],
+    desc: '중복 코드를 재사용 가능한 단위로 추출하는 패턴과 단일 책임 원칙을 학습해보세요.',
+    links: [
+      { label: 'Refactoring Guru (한글)', url: 'https://refactoring.guru/ko/refactoring' },
+      { label: 'React 공식 문서 — 커스텀 훅', url: 'https://ko.react.dev/learn/reusing-logic-with-custom-hooks' }
+    ]
+  },
+  {
+    key: 'security',
+    title: '웹 보안',
+    words: ['보안', 'security', '취약', 'xss', 'injection', '유출', '노출', '토큰'],
+    desc: '입력 검증, 인증 정보 관리 등 웹 보안의 기초를 다져보세요.',
+    links: [
+      { label: 'OWASP Top 10', url: 'https://owasp.org/www-project-top-ten/' },
+      { label: 'MDN — 웹 보안', url: 'https://developer.mozilla.org/ko/docs/Web/Security' }
+    ]
+  },
+  {
+    key: 'performance',
+    title: '성능 최적화',
+    words: ['성능', 'performance', '최적화', '메모리', 'leak', '느려', '렌더링'],
+    desc: '불필요한 연산과 렌더링을 줄이는 성능 최적화 기법을 공부해보세요.',
+    links: [
+      { label: 'web.dev — 성능 학습', url: 'https://web.dev/learn/performance' },
+      { label: 'React 공식 문서 — memo', url: 'https://ko.react.dev/reference/react/memo' }
+    ]
+  },
+  {
+    key: 'validation',
+    title: '유효성 검사',
+    words: ['유효성', '검증', 'validation', 'validate', '정규식', 'regex'],
+    desc: '폼 입력 검증 패턴과 정규 표현식을 정리해보세요.',
+    links: [
+      { label: 'MDN — 폼 데이터 유효성 검사', url: 'https://developer.mozilla.org/ko/docs/Learn/Forms/Form_validation' },
+      { label: 'MDN — 정규 표현식', url: 'https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Regular_expressions' }
+    ]
+  }
+];
+
+const DEMO_FILES = [
+  { filename: 'src/components/LoginForm.tsx', status: 'modified', additions: 24, deletions: 6 },
+  { filename: 'src/utils/validation.ts', status: 'added', additions: 18, deletions: 0 },
+  { filename: 'src/api/auth.ts', status: 'modified', additions: 12, deletions: 3 }
+];
+
+const DEMO_FILE_CONTENTS = {
+  'src/components/LoginForm.tsx': "import { useState } from 'react';\nimport { validateEmail } from '../utils/validation';\nimport { login } from '../api/auth';\n\nexport function LoginForm() {\n  const [userEmail, setUserEmail] = useState('');\n  const [isValid, setIsValid] = useState(false);\n\n  const handleSubmit = async () => {\n    if (!validateEmail(userEmail)) {\n      setIsValid(false);\n      return;\n    }\n    try {\n      await login({ email: userEmail });\n    } catch (error) {\n      alert('로그인에 실패했어요. 잠시 후 다시 시도해주세요.');\n    }\n  };\n\n  return null; // ...\n}",
+  'src/utils/validation.ts': "// 이메일 유효성 검사 유틸\nexport function validateEmail(email) {\n  const regex = /^[^@]+@[^@]+\\.[^@]+$/;\n  return regex.test(email);\n}\n\nexport function validatePassword(password) {\n  return password.length >= 8;\n}",
+  'src/api/auth.ts': "export async function login(credentials) {\n  const response = await fetch('/api/login', {\n    method: 'POST',\n    body: JSON.stringify(credentials)\n  });\n  return response.json();\n}"
+};
+
+export default function App() {
+  const [prUrl, setPrUrl] = useState('');
+  const [githubToken, setGithubToken] = useState(localStorage.getItem('github-token') || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [prInfo, setPrInfo] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [checkedState, setCheckedState] = useState({});
+  const [skippedState, setSkippedState] = useState({}); // true=리뷰 불필요, undefined=자동 제안 따름
+  const [studyChecked, setStudyChecked] = useState({});
+  // PR 아카이브: { [폴더명]: [{ url, title, number, repo, savedAt, topics }] }
+  const [archive, setArchive] = useState(() => JSON.parse(localStorage.getItem('pr-review-archive') || '{}'));
+  const [folderName, setFolderName] = useState(() => localStorage.getItem('pr-archive-last-folder') || '내 PR');
+  const [globalStudyChecked, setGlobalStudyChecked] = useState(() => JSON.parse(localStorage.getItem('pr-archive-study-checked') || '{}'));
+  const [openFolders, setOpenFolders] = useState({});
+  const [showRegister, setShowRegister] = useState(false); // 새 PR 등록 모달
+  const [userNotes, setUserNotes] = useState({});
+  const [aiSummaries, setAiSummaries] = useState({});
+  const [codePanelOpen, setCodePanelOpen] = useState(false);
+  const [panelTab, setPanelTab] = useState('diff'); // diff | files
+  const [prFiles, setPrFiles] = useState([]);
+  const [fileView, setFileView] = useState(null); // { path, content?, loading?, error? }
+  const [verifyState, setVerifyState] = useState(null); // { threadId, loading?, error?, content? }
+  const [showThread, setShowThread] = useState({});
+  const [hintVisible, setHintVisible] = useState({}); // AI 힌트는 버튼을 눌렀을 때만 표시
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [replySending, setReplySending] = useState({});
+  const [replyError, setReplyError] = useState({});
+  const [showTokenField, setShowTokenField] = useState(false);
+  const [showTokenHelp, setShowTokenHelp] = useState(false);
+  const [page, setPage] = useState('home');
+  const [isDemo, setIsDemo] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [filter, setFilter] = useState('all'); // all | todo | done
+  const [sortMode, setSortMode] = useState('file'); // file | time | ai | priority
+
+  useEffect(() => {
+    localStorage.setItem('github-token', githubToken);
+  }, [githubToken]);
+
+  // 리뷰어가 표기한 P1~P5 우선순위 파싱 (없으면 99)
+  const parsePriority = (body) => {
+    const m = (body || '').match(/\bP([1-5])\b/i);
+    return m ? parseInt(m[1], 10) : 99;
+  };
+
+  // AI 중요도 분석 (키워드 기반 점수, 높을수록 중요)
+  const scoreImportance = (t) => {
+    const body = (t.body || '').toLowerCase();
+    const buckets = [
+      { score: 5, words: ['보안', 'security', '취약', 'injection', 'xss', '유출', '노출'] },
+      { score: 4, words: ['버그', 'bug', 'crash', '죽을', '죽는', '에러', 'error', '예외', 'exception', '실패', 'fail', 'try/catch'] },
+      { score: 3, words: ['성능', 'performance', '메모리', 'leak', '느려', '최적화', 'n+1'] },
+      { score: 2, words: ['중복', '리팩터', 'refactor', '재사용', '구조', '설계', '분리', '책임'] },
+      { score: 1, words: ['네이밍', 'naming', '컨벤션', '오타', 'typo', '스타일', '포맷', '케이스', 'camel', 'snake'] },
+    ];
+    let max = 0;
+    buckets.forEach(b => { if (b.words.some(w => body.includes(w))) max = Math.max(max, b.score); });
+    // 리뷰어가 P1~P2를 달았으면 중요도 가산
+    const p = parsePriority(t.body);
+    if (p === 1) max = Math.max(max, 5);
+    else if (p === 2) max = Math.max(max, 4);
+    return max;
+  };
+
+  // 조치가 필요 없어 보이는 코멘트 자동 감지 (칭찬, LGTM 등)
+  const suggestNoAction = (t) => {
+    const body = (t.body || '').trim().toLowerCase();
+    const actionWords = ['수정', '변경', '바꿔', '바꾸', '추가', '제거', '삭제', '분리', '추출', '해주세요', '부탁', '필요해', '필요할', 'fix', 'change', 'should', 'please', '어떨까요', '?'];
+    if (actionWords.some(w => body.includes(w))) return false; // 조치 요청 신호가 있으면 무조건 조치 필요
+    const praise = ['lgtm', '👍', '👏', '🎉', '좋네요', '좋아요', '깔끔하', '멋지', '멋있', '수고하셨', '수고했', 'nice', 'good job', 'great', 'awesome', '감사합니다', '최고'];
+    return praise.some(w => body.includes(w));
+  };
+
+  // 사용자가 직접 표시했으면 그 값을, 아니면 자동 제안을 따름
+  const isSkipped = (t) => skippedState[t.id] !== undefined ? skippedState[t.id] : suggestNoAction(t);
+
+  const importanceLabel = (score) => {
+    if (score >= 4) return { text: '중요도 높음', cls: 'bg-rose-50 text-rose-600' };
+    if (score >= 2) return { text: '중요도 중간', cls: 'bg-amber-50 text-amber-600' };
+    return { text: '중요도 낮음', cls: 'bg-slate-100 text-slate-500' };
+  };
+
+  // VS Code 웹 에디터에서 특정 파일·라인 위치를 바로 여는 URL 생성
+  const vscodeFileUrl = (path, line) => {
+    const headRepo = prInfo?.head?.repo?.full_name;
+    const headRef = prInfo?.head?.ref;
+    if (!headRepo || !headRef || !path) return null;
+    return `https://vscode.dev/github/${headRepo}/blob/${headRef}/${path}?vscode-lang=ko-kr${line ? `#L${line}` : ''}`;
+  };
+
+  // (#discussion_r... 앵커는 에디터가 해석하지 못하므로, PR 브랜치 + 파일 경로 + 라인으로 직접 이동)
+  const toVscodeUrl = (thread) =>
+    vscodeFileUrl(thread.path, thread.line || thread.original_line) || thread.html_url;
+
+  // PR 변경 파일의 내용을 head 브랜치 기준으로 불러오기
+  const openFile = async (path) => {
+    setFileView({ path, loading: true });
+    if (isDemo) {
+      setFileView({ path, content: DEMO_FILE_CONTENTS[path] || '// 데모 파일', loading: false });
+      return;
+    }
+    try {
+      const headRepo = prInfo?.head?.repo?.full_name;
+      const headRef = prInfo?.head?.ref;
+      const resp = await fetch(`https://api.github.com/repos/${headRepo}/contents/${path}?ref=${encodeURIComponent(headRef)}`, { headers: getHeaders() });
+      if (!resp.ok) throw new Error('파일 내용을 불러오지 못했어요.');
+      const data = await resp.json();
+      const bin = atob((data.content || '').replace(/\n/g, ''));
+      const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+      setFileView({ path, content: new TextDecoder('utf-8').decode(bytes), loading: false });
+    } catch (e) {
+      setFileView({ path, error: e.message, loading: false });
+    }
+  };
+
+  // head 브랜치의 현재 파일 내용 가져오기 (반영 확인용)
+  const fetchHeadFileContent = async (path) => {
+    if (isDemo) {
+      await new Promise(r => setTimeout(r, 300));
+      return DEMO_FILE_CONTENTS[path] || '';
+    }
+    const headRepo = prInfo?.head?.repo?.full_name;
+    const headRef = prInfo?.head?.ref;
+    const resp = await fetch(`https://api.github.com/repos/${headRepo}/contents/${path}?ref=${encodeURIComponent(headRef)}`, { headers: getHeaders() });
+    if (!resp.ok) throw new Error('현재 코드를 불러오지 못했어요.');
+    const data = await resp.json();
+    const bin = atob((data.content || '').replace(/\n/g, ''));
+    return new TextDecoder('utf-8').decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  };
+
+  // 코멘트 라인 주변만 잘라내기
+  const snippetAround = (content, line, radius = 8) => {
+    const lines = content.split('\n');
+    const center = (line || 1) - 1;
+    const start = Math.max(0, center - radius);
+    const end = Math.min(lines.length, center + radius + 1);
+    return lines.slice(start, end).join('\n');
+  };
+
+  // 리뷰 당시 코드 vs 현재 코드 비교 (반영 확인)
+  const openVerify = async (thread) => {
+    setCodePanelOpen(true);
+    setPanelTab('verify');
+    setVerifyState({ threadId: thread.id, loading: true });
+    try {
+      const content = await fetchHeadFileContent(thread.path);
+      setVerifyState({ threadId: thread.id, loading: false, content });
+    } catch (e) {
+      setVerifyState({ threadId: thread.id, loading: false, error: e instanceof TypeError ? '네트워크 오류가 발생했어요.' : e.message });
+    }
+  };
+
+  const parsePrUrl = (url) => {
+    const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+    if (match) return { owner: match[1], repo: match[2], pull_number: match[3] };
+    return null;
+  };
+
+  const storageKey = () => {
+    if (isDemo) return 'pr-review-demo';
+    const d = parsePrUrl(prUrl);
+    return d ? `pr-review-${d.owner}-${d.repo}-${d.pull_number}` : null;
+  };
+
+  // ── 신택스 하이라이팅 ──
+  const CODE_KEYWORDS = new Set(['import','export','const','let','var','async','await','function','return','if','else','new','class','interface','type','from','try','catch','finally','throw','for','while','switch','case','break','default','extends','typeof','in','of','null','undefined','true','false','this','public','private','static','void','enum']);
+
+  const tokenizeLine = (text) => {
+    const tokens = [];
+    const re = /(\/\/.*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|(.)/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      if (m[1]) tokens.push({ t: m[1], c: 'text-slate-500 italic' });            // 주석
+      else if (m[2]) tokens.push({ t: m[2], c: 'text-amber-300' });              // 문자열
+      else if (m[3]) tokens.push({ t: m[3], c: 'text-orange-300' });             // 숫자
+      else if (m[4]) {
+        const word = m[4];
+        if (CODE_KEYWORDS.has(word)) tokens.push({ t: word, c: 'text-violet-400' });        // 키워드
+        else if (text[re.lastIndex] === '(') tokens.push({ t: word, c: 'text-sky-300' });   // 함수 호출
+        else tokens.push({ t: word, c: 'text-slate-200' });                                 // 식별자
+      }
+      else tokens.push({ t: m[5], c: 'text-slate-400' });                        // 구두점 등
+    }
+    return tokens;
+  };
+
+  const highlightCode = (code, maxLines = 15) => {
+    if (!code) return <div className="text-slate-500 text-xs italic">코드를 불러올 수 없습니다.</div>;
+    return code.split('\n').slice(0, maxLines).map((line, i) => {
+      if (line.startsWith('@')) {
+        return <div key={i} className="font-mono text-sky-400 text-xs py-0.5 leading-relaxed whitespace-pre">{line}</div>;
+      }
+      let marker = ' ', rest = line, markerCls = 'text-slate-600', rowCls = '';
+      if (line.startsWith('+')) { marker = '+'; rest = line.slice(1); markerCls = 'text-emerald-400'; rowCls = 'bg-emerald-500/10'; }
+      else if (line.startsWith('-')) { marker = '-'; rest = line.slice(1); markerCls = 'text-rose-400'; rowCls = 'bg-rose-500/10 opacity-70'; }
+      return (
+        <div key={i} className={`font-mono text-xs py-0.5 leading-relaxed whitespace-pre flex rounded-sm ${rowCls}`}>
+          <span className={`w-4 flex-shrink-0 text-center ${markerCls}`}>{marker}</span>
+          <span>{tokenizeLine(rest).map((tok, j) => <span key={j} className={tok.c}>{tok.t}</span>)}</span>
+        </div>
+      );
+    });
+  };
+
+  const handleAiSummary = async (thread, forceRefresh = false) => {
+    if (!forceRefresh && aiSummaries[thread.id]?.text) return;
+    setAiSummaries(prev => ({ ...prev, [thread.id]: { loading: true } }));
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const body = (thread.body || '').toLowerCase();
+    const code = (thread.diff_hunk || '').toLowerCase();
+    let generatedHint = '';
+
+    if (body.includes('파스칼') || body.includes('케이스') || body.includes('camel') || body.includes('snake') || body.includes('변수') || body.includes('이름') || body.includes('name') || body.includes('명명')) {
+      generatedHint = '네이밍 및 컨벤션 리뷰: 변수나 함수명이 프로젝트 컨벤션을 잘 따르고 있나요? 코드의 일관성과 가독성을 위해 명명 규칙을 재검토해보세요.';
+    } else if (body.includes('에러') || body.includes('error') || body.includes('메시지') || body.includes('message') || body.includes('exception')) {
+      generatedHint = '에러 핸들링 가이드: 시스템 에러 문구 대신 사용자 친화적인 피드백 메시지를 구성하세요. 예외 처리를 공통화하여 관리할 수 있는지 검토해보세요.';
+    } else if (body.includes('중복') || body.includes('refactor') || body.includes('재사용')) {
+      generatedHint = '코드 중복 제거: 로직이 여러 곳에서 반복되고 있나요? 재사용 가능한 함수나 훅(Hook)으로 추출하여 유지보수성을 높여보세요.';
+    } else if (code.includes('async') || code.includes('await')) {
+      generatedHint = '비동기 로직 검토: async/await 사용 시 try/catch로 예외 처리를 명확히 했나요? 에러 발생 시 사용자 경험을 해치지 않는지 확인해보세요.';
+    } else {
+      generatedHint = '로직 리뷰: 리뷰어의 피드백을 반영하며 단일 책임 원칙이 지켜지고 있는지 확인하세요. 함수를 분리하여 가독성을 높일 여지가 있는지 고민해보세요.';
+    }
+
+    setAiSummaries(prev => {
+      const newState = { ...prev, [thread.id]: { text: generatedHint, loading: false } };
+      const key = storageKey();
+      if (key) localStorage.setItem(`${key}-summaries`, JSON.stringify(newState));
+      return newState;
+    });
+  };
+
+  const getHeaders = () => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (githubToken) headers['Authorization'] = `token ${githubToken}`;
+    return headers;
+  };
+
+  const restoreState = (key) => {
+    setCheckedState(JSON.parse(localStorage.getItem(`${key}-checks`) || '{}'));
+    setSkippedState(JSON.parse(localStorage.getItem(`${key}-skipped`) || '{}'));
+    setStudyChecked(JSON.parse(localStorage.getItem(`${key}-study`) || '{}'));
+    setUserNotes(JSON.parse(localStorage.getItem(`${key}-notes`) || '{}'));
+    setAiSummaries(JSON.parse(localStorage.getItem(`${key}-summaries`) || '{}'));
+  };
+
+  // ── PR 아카이브 ──
+  const persistArchive = (next) => {
+    localStorage.setItem('pr-review-archive', JSON.stringify(next));
+    return next;
+  };
+
+  const saveToArchive = (folder, entry) => {
+    localStorage.setItem('pr-archive-last-folder', folder);
+    setArchive(prev => {
+      const list = prev[folder] || [];
+      const idx = list.findIndex(p => p.url === entry.url);
+      const newList = idx === -1 ? [entry, ...list] : list.map((p, i) => i === idx ? { ...p, ...entry } : p);
+      return persistArchive({ ...prev, [folder]: newList });
+    });
+  };
+
+  const removeFromArchive = (login, url) => {
+    setArchive(prev => {
+      const newList = (prev[login] || []).filter(p => p.url !== url);
+      const next = { ...prev };
+      if (newList.length === 0) delete next[login];
+      else next[login] = newList;
+      return persistArchive(next);
+    });
+  };
+
+  const toggleGlobalStudy = (topicKey) => {
+    setGlobalStudyChecked(prev => {
+      const next = { ...prev, [topicKey]: !prev[topicKey] };
+      localStorage.setItem('pr-archive-study-checked', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const loadDemo = () => {
+    setPrInfo(DEMO_PR_INFO);
+    setComments(DEMO_COMMENTS);
+    setPrFiles(DEMO_FILES);
+    setPanelTab('diff');
+    setFileView(null);
+    setIsDemo(true);
+    restoreState('pr-review-demo');
+    setError('');
+    setCurrentStep(0);
+    setFilter('all');
+    saveToArchive((folderName || '').trim() || '내 PR', { url: 'demo', title: DEMO_PR_INFO.title, number: DEMO_PR_INFO.number, repo: 'demo/repo', savedAt: Date.now() });
+    setShowRegister(false);
+    setPage('review');
+  };
+
+  const fetchPrData = async (e, urlOverride) => {
+    if (e) e.preventDefault();
+    const url = urlOverride || prUrl;
+    if (urlOverride) setPrUrl(urlOverride);
+    if (!url.trim()) { setError('GitHub PR URL을 입력해주세요.'); return; }
+    const prDetails = parsePrUrl(url);
+    if (!prDetails) { setError('올바른 GitHub PR URL 형식이 아닙니다.'); return; }
+
+    setLoading(true); setError('');
+    try {
+      const { owner, repo, pull_number } = prDetails;
+      const apiBase = `https://api.github.com/repos/${owner}/${repo}/pulls/${pull_number}`;
+
+      const infoResponse = await fetch(apiBase, { headers: getHeaders() });
+      if (!infoResponse.ok) {
+        if (infoResponse.status === 404) {
+          throw new Error(githubToken
+            ? 'PR을 찾을 수 없어요. URL과 토큰의 저장소 권한을 확인해주세요.'
+            : 'PR을 찾을 수 없어요. URL을 확인하거나, 일정 횟수 이상 조회 시에는 GitHub Access Token 등록이 필요해요.');
+        }
+        if (infoResponse.status === 401) throw new Error('토큰 인증에 실패했어요. 토큰이 만료되지 않았는지 확인해주세요.');
+        if (infoResponse.status === 403) throw new Error('API 요청 한도를 초과했어요. GitHub Access Token을 등록하면 해결돼요.');
+        throw new Error('PR 정보를 가져오는데 실패했어요. 잠시 후 다시 시도해주세요.');
+      }
+      const infoData = await infoResponse.json();
+      setPrInfo(infoData);
+
+      const commentsResponse = await fetch(`${apiBase}/comments?per_page=100`, { headers: getHeaders() });
+      if (!commentsResponse.ok) throw new Error('리뷰 코멘트를 가져오는데 실패했어요. 잠시 후 다시 시도해주세요.');
+      const commentsData = await commentsResponse.json();
+      setComments(commentsData);
+
+      // PR 변경 파일 목록 (실패해도 치명적이지 않음)
+      try {
+        const filesResponse = await fetch(`${apiBase}/files?per_page=100`, { headers: getHeaders() });
+        setPrFiles(filesResponse.ok ? await filesResponse.json() : []);
+      } catch { setPrFiles([]); }
+
+      setPanelTab('diff');
+      setFileView(null);
+      setIsDemo(false);
+      restoreState(`pr-review-${owner}-${repo}-${pull_number}`);
+      setCurrentStep(0);
+      setFilter('all');
+      // 사용자가 지정한 폴더 아래에 아카이빙
+      saveToArchive((folderName || '').trim() || '내 PR', {
+        url,
+        title: infoData.title,
+        number: infoData.number,
+        repo: `${owner}/${repo}`,
+        savedAt: Date.now()
+      });
+      setShowRegister(false);
+      setPage('review');
+    } catch (err) {
+      // 네트워크 오류 등 브라우저가 던지는 영문 에러는 한글로 변환
+      setError(err instanceof TypeError ? '네트워크 오류가 발생했어요. 인터넷 연결을 확인해주세요.' : err.message);
+      setPrInfo(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const threads = useMemo(() => {
+    const threadMap = new Map();
+    const replies = [];
+    comments.forEach(comment => {
+      if (!comment.in_reply_to_id) threadMap.set(comment.id, { ...comment, replies: [] });
+      else replies.push(comment);
+    });
+    replies.forEach(reply => {
+      if (threadMap.has(reply.in_reply_to_id)) threadMap.get(reply.in_reply_to_id).replies.push(reply);
+    });
+    return Array.from(threadMap.values());
+  }, [comments]);
+
+  // 진행률은 '조치 필요' 항목 기준으로만 계산
+  const actionableCount = useMemo(() => threads.filter(t => !isSkipped(t)).length, [threads, skippedState]);
+  const skippedCount = threads.length - actionableCount;
+  const doneCount = useMemo(() => threads.filter(t => !isSkipped(t) && checkedState[t.id]).length, [checkedState, threads, skippedState]);
+  const progress = actionableCount === 0 ? 0 : Math.round((doneCount / actionableCount) * 100);
+
+  // 정렬
+  const sortedThreads = useMemo(() => {
+    const arr = [...threads];
+    if (sortMode === 'file') {
+      arr.sort((a, b) => (a.path || '').localeCompare(b.path || '') || (a.line || 0) - (b.line || 0));
+    } else if (sortMode === 'time') {
+      arr.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    } else if (sortMode === 'ai') {
+      arr.sort((a, b) => scoreImportance(b) - scoreImportance(a));
+    } else if (sortMode === 'priority') {
+      arr.sort((a, b) => parsePriority(a.body) - parsePriority(b.body));
+    }
+    return arr;
+  }, [threads, sortMode]);
+
+  const filteredThreads = useMemo(() => {
+    if (filter === 'skipped') return sortedThreads.filter(t => isSkipped(t));
+    const base = sortedThreads.filter(t => !isSkipped(t));
+    if (filter === 'todo') return base.filter(t => !checkedState[t.id]);
+    if (filter === 'done') return base.filter(t => checkedState[t.id]);
+    return base;
+  }, [sortedThreads, filter, checkedState, skippedState]);
+
+  // 필터 변경/체크로 목록이 줄어도 스텝이 범위를 벗어나지 않게 보정
+  const safeStep = Math.min(currentStep, Math.max(0, filteredThreads.length - 1));
+  const currentThread = filteredThreads[safeStep];
+
+  // 리뷰 코멘트 + 내 메모를 분석해 학습 주제 추출
+  const studyTopics = useMemo(() => {
+    const texts = threads.map(t => `${t.body || ''} ${(t.replies || []).map(r => r.body).join(' ')} ${userNotes[t.id] || ''}`.toLowerCase());
+    return STUDY_TOPICS
+      .map(topic => ({ ...topic, count: texts.filter(x => topic.words.some(w => x.includes(w))).length }))
+      .filter(t => t.count > 0)
+      .sort((a, b) => b.count - a.count);
+  }, [threads, userNotes]);
+
+  // 현재 PR의 학습 주제를 아카이브 항목에도 저장 (통합 학습 노트용)
+  useEffect(() => {
+    if (!prInfo) return;
+    const entryUrl = isDemo ? 'demo' : prUrl;
+    setArchive(prev => {
+      // 어느 폴더에 있든 URL로 항목을 찾아 갱신
+      for (const [folder, list] of Object.entries(prev)) {
+        const idx = list.findIndex(p => p.url === entryUrl);
+        if (idx === -1) continue;
+        const topics = {};
+        studyTopics.forEach(t => { topics[t.key] = t.count; });
+        const stats = { topics, done: doneCount, total: actionableCount };
+        const old = list[idx];
+        if (JSON.stringify({ topics: old.topics || {}, done: old.done, total: old.total }) === JSON.stringify(stats)) return prev;
+        const newList = [...list];
+        newList[idx] = { ...old, ...stats };
+        return persistArchive({ ...prev, [folder]: newList });
+      }
+      return prev;
+    });
+  }, [studyTopics, prInfo, isDemo, doneCount, actionableCount]);
+
+  // 아카이브 전체 PR을 합산한 통합 학습 주제
+  const globalTopics = useMemo(() => {
+    const allPrs = Object.values(archive).flat();
+    return STUDY_TOPICS
+      .map(topic => {
+        const related = allPrs.filter(pr => (pr.topics || {})[topic.key] > 0);
+        const count = related.reduce((sum, pr) => sum + pr.topics[topic.key], 0);
+        return { ...topic, count, prCount: related.length };
+      })
+      .filter(t => t.count > 0)
+      .sort((a, b) => b.count - a.count);
+  }, [archive]);
+
+  const toggleStudy = (topicKey) => {
+    setStudyChecked(prev => {
+      const newState = { ...prev, [topicKey]: !prev[topicKey] };
+      const key = storageKey();
+      if (key) localStorage.setItem(`${key}-study`, JSON.stringify(newState));
+      return newState;
+    });
+  };
+
+  // 반영 확인 탭이 열린 채 페이지를 넘기면 현재 항목 기준으로 다시 불러오기
+  useEffect(() => {
+    if (codePanelOpen && panelTab === 'verify' && currentThread && verifyState?.threadId !== currentThread.id) {
+      openVerify(currentThread);
+    }
+  }, [codePanelOpen, panelTab, currentThread]);
+
+  // 답글을 PR 스레드에 바로 등록 (GitHub API 연동)
+  const sendReply = async (thread) => {
+    const text = (replyDrafts[thread.id] || '').trim();
+    if (!text) return;
+    setReplySending(prev => ({ ...prev, [thread.id]: true }));
+    setReplyError(prev => ({ ...prev, [thread.id]: '' }));
+    try {
+      if (isDemo) {
+        await new Promise(r => setTimeout(r, 500));
+        setComments(prev => [...prev, {
+          id: Date.now(),
+          in_reply_to_id: thread.id,
+          user: { login: DEMO_PR_INFO.user.login },
+          body: text,
+          created_at: new Date().toISOString()
+        }]);
+      } else {
+        if (!githubToken) throw new Error('답글을 등록하려면 GitHub Access Token이 필요해요.');
+        const d = parsePrUrl(prUrl);
+        const resp = await fetch(`https://api.github.com/repos/${d.owner}/${d.repo}/pulls/${d.pull_number}/comments/${thread.id}/replies`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ body: text })
+        });
+        if (!resp.ok) {
+          if (resp.status === 401) throw new Error('토큰 인증에 실패했어요. 토큰을 확인해주세요.');
+          if (resp.status === 403 || resp.status === 404) throw new Error('토큰에 쓰기 권한(repo)이 없어요. 토큰 권한을 확인해주세요.');
+          throw new Error('답글 등록에 실패했어요. 잠시 후 다시 시도해주세요.');
+        }
+        const created = await resp.json();
+        setComments(prev => [...prev, created]);
+      }
+      setReplyDrafts(prev => ({ ...prev, [thread.id]: '' }));
+      setShowThread(prev => ({ ...prev, [thread.id]: true })); // 등록한 답글이 바로 보이게
+    } catch (e) {
+      setReplyError(prev => ({ ...prev, [thread.id]: e instanceof TypeError ? '네트워크 오류가 발생했어요.' : e.message }));
+    } finally {
+      setReplySending(prev => ({ ...prev, [thread.id]: false }));
+    }
+  };
+
+  const toggleCheck = (id, e) => {
+    if (e) e.stopPropagation();
+    setCheckedState(prev => {
+      const newState = { ...prev, [id]: !prev[id] };
+      const key = storageKey();
+      if (key) localStorage.setItem(`${key}-checks`, JSON.stringify(newState));
+      return newState;
+    });
+  };
+
+  const toggleSkip = (thread) => {
+    setSkippedState(prev => {
+      const newState = { ...prev, [thread.id]: !isSkipped(thread) };
+      const key = storageKey();
+      if (key) localStorage.setItem(`${key}-skipped`, JSON.stringify(newState));
+      return newState;
+    });
+  };
+
+  const handleNoteChange = (id, text) => {
+    setUserNotes(prev => {
+      const newState = { ...prev, [id]: text };
+      const key = storageKey();
+      if (key) localStorage.setItem(`${key}-notes`, JSON.stringify(newState));
+      return newState;
+    });
+  };
+
+  const FilterTab = ({ value, label, count }) => (
+    <button
+      onClick={() => { setFilter(value); setCurrentStep(0); }}
+      className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold transition ${
+        filter === value ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-200'
+      }`}
+    >
+      {label} <span className={filter === value ? 'text-slate-400' : 'text-slate-400'}>{count}</span>
+    </button>
+  );
+
+  return (
+    <div className={`min-h-screen text-slate-900 transition-all duration-300 ${page === 'review' && codePanelOpen ? 'lg:pr-[420px]' : ''}`}>
+      {page === 'home' ? (
+        <div className="max-w-2xl mx-auto px-5 pt-16 pb-16">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+              <Github size={18} />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">PR Review Checklist</h1>
+          </div>
+          <p className="text-[15px] text-slate-500 mb-8 leading-relaxed">리뷰 코멘트를 체크리스트로 한눈에. 하나도 빠뜨리지 않고 반영하세요.</p>
+
+          <div>
+            {/* 메인: PR 아카이브 */}
+            <div className="w-full min-w-0">
+              <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                  <FolderIcon size={15} className="text-amber-500" /> PR 아카이브
+                </h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage('archive-study')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900 transition"
+                  >
+                    <BookIcon size={13} className="text-indigo-500" /> 전체 학습 노트
+                  </button>
+                  <button
+                    onClick={() => setShowRegister(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition"
+                  >
+                    <PlusIcon size={13} /> 새 PR 등록
+                  </button>
+                </div>
+              </div>
+
+              {Object.keys(archive).length === 0 ? (
+                <div className="bg-white border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center">
+                  <FolderIcon size={28} className="text-slate-300 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-slate-600">아직 아카이브된 PR이 없어요</p>
+                  <p className="text-xs text-slate-500 mt-1.5">폴더를 정하고 PR을 등록하면 여기에 쌓여요.</p>
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => setShowRegister(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition"
+                    >
+                      <PlusIcon size={13} /> 새 PR 등록
+                    </button>
+                    <button
+                      onClick={loadDemo}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-semibold transition"
+                    >
+                      <FlaskConical size={13} /> 데모로 체험해보기
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {Object.entries(archive).map(([folder, prs]) => {
+                    const open = openFolders[folder] !== false; // 기본 펼침
+                    return (
+                      <div key={folder} className="bg-white border border-slate-300 rounded-xl overflow-hidden">
+                        <button
+                          onClick={() => setOpenFolders(prev => ({ ...prev, [folder]: !open }))}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition"
+                        >
+                          <span className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                            <FolderIcon size={15} className="text-amber-500" /> {folder}
+                            <span className="text-xs text-slate-500 font-normal">PR {prs.length}개</span>
+                          </span>
+                          <ChevronDown size={15} className={`text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {open && (
+                          <div className="border-t border-slate-200 divide-y divide-slate-100">
+                            {prs.map(pr => {
+                              const prDone = pr.total > 0 && pr.done >= pr.total;
+                              return (
+                                <div key={pr.url} className="flex items-center gap-2 px-4 py-3 hover:bg-indigo-50/40 transition cursor-pointer group"
+                                     onClick={() => pr.url === 'demo' ? loadDemo() : fetchPrData(null, pr.url)}>
+                                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${prDone ? 'bg-emerald-500' : pr.total > 0 ? 'bg-amber-400' : 'bg-slate-300'}`}></div>
+                                  <div className="flex-grow min-w-0">
+                                    <p className="text-[13px] font-semibold text-slate-800 truncate group-hover:text-indigo-700 transition">{pr.title}</p>
+                                    <p className="text-[11px] text-slate-500 font-mono truncate mt-0.5">
+                                      {pr.repo} #{pr.number}
+                                      {pr.savedAt && ` · ${new Date(pr.savedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}`}
+                                    </p>
+                                  </div>
+                                  {pr.total > 0 && (
+                                    <span className={`text-[11px] font-bold px-2 py-1 rounded-md flex-shrink-0 ${prDone ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                                      {prDone ? '반영 완료' : `${pr.done || 0}/${pr.total} 반영`}
+                                    </span>
+                                  )}
+                                  <ChevronDown size={14} className="-rotate-90 text-slate-400 flex-shrink-0" />
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); removeFromArchive(folder, pr.url); }}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 transition flex-shrink-0"
+                                    title="아카이브에서 삭제"
+                                  >
+                                    <XIcon size={13} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 새 PR 등록 모달 */}
+            {showRegister && (
+            <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setShowRegister(false)}>
+              <div className="w-full max-w-md mt-12 mb-12" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white border border-slate-300 rounded-2xl p-5 shadow-2xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                    <span className="w-5 h-5 bg-slate-900 rounded-md flex items-center justify-center text-white"><PlusIcon size={12} /></span>
+                    새 PR 등록
+                  </h3>
+                  <button onClick={() => setShowRegister(false)} className="p-1.5 text-slate-400 hover:text-slate-700 transition" title="닫기">
+                    <XIcon size={16} />
+                  </button>
+                </div>
+                <form onSubmit={fetchPrData} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                      <span className="text-slate-400 mr-1">1.</span>저장할 폴더
+                    </label>
+                    <input
+                      list="folder-options"
+                      value={folderName}
+                      onChange={(e) => setFolderName(e.target.value)}
+                      placeholder="예: 우테코, 회사 프로젝트"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-sm placeholder:text-slate-500 focus:outline-none focus:border-slate-400 transition"
+                    />
+                    <datalist id="folder-options">
+                      {Object.keys(archive).map(f => <option key={f} value={f} />)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                      <span className="text-slate-400 mr-1">2.</span>PR 링크
+                    </label>
+                    <input
+                      type="url"
+                      value={prUrl}
+                      onChange={(e) => setPrUrl(e.target.value)}
+                      placeholder="https://github.com/owner/repo/pull/123"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-sm placeholder:text-slate-500 focus:outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-100 transition"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold text-sm transition disabled:opacity-50"
+                  >
+                    {loading ? '불러오는 중...' : '리뷰 체크리스트 만들기'}
+                  </button>
+                </form>
+
+          {error && <p className="mt-4 text-rose-600 text-sm">{error}</p>}
+
+          <button
+            onClick={loadDemo}
+            className="mt-3 w-full py-3 text-slate-600 hover:text-slate-900 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition"
+          >
+            <FlaskConical size={14} /> 데모 데이터로 체험하기
+          </button>
+              </div>
+              </div>
+            </div>
+            )}
+
+            {/* 페이지 하단: GitHub Access Token 설정 */}
+            <div className="mt-10">
+            <button
+              onClick={() => setShowTokenField(!showTokenField)}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-white border border-slate-300 rounded-xl hover:border-slate-300 transition text-left"
+            >
+              <span className="flex items-center gap-3 min-w-0">
+                <span className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${githubToken ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                  <LockIcon size={16} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-slate-700">GitHub Access Token 설정</span>
+                  <span className={`block text-xs mt-0.5 truncate ${githubToken ? 'text-emerald-600 font-medium' : 'text-slate-500'}`}>
+                    {githubToken ? '토큰 등록 완료' : '일정 횟수 이상 조회하거나 비공개 PR을 보려면 토큰이 필요해요'}
+                  </span>
+                </span>
+              </span>
+              <ChevronDown size={16} className={`text-slate-400 flex-shrink-0 transition-transform ${showTokenField ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showTokenField && (
+              <div className="mt-3 p-4 bg-white border border-slate-300 rounded-xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-semibold text-slate-500">GitHub Personal Access Token</label>
+                  <button type="button" onClick={() => setShowTokenHelp(!showTokenHelp)} className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2">
+                    발급받는 법
+                  </button>
+                </div>
+                <input
+                  type="password"
+                  value={githubToken}
+                  onChange={(e) => setGithubToken(e.target.value)}
+                  placeholder="ghp_..."
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-sm placeholder:text-slate-500 focus:outline-none focus:border-slate-400 transition"
+                />
+                <p className="text-xs text-slate-400 leading-relaxed">토큰은 브라우저에만 저장되며 외부로 전송되지 않아요. 토큰 없이는 시간당 조회 횟수가 제한돼요.</p>
+
+                {showTokenHelp && (
+                  <div className="p-4 bg-slate-50 rounded-xl text-xs text-slate-500 leading-relaxed space-y-1">
+                    <p className="font-semibold text-slate-600 mb-1.5">토큰 발급 순서</p>
+                    <p>1. GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)</p>
+                    <p>2. "Generate new token (classic)" 클릭</p>
+                    <p>3. Note 입력 후 Expiration 설정</p>
+                    <p>4. "repo" 권한 체크 후 "Generate token" 클릭</p>
+                    <p>5. 생성된 토큰을 위 입력창에 붙여넣기</p>
+                  </div>
+                )}
+              </div>
+            )}
+            </div>
+          </div>
+        </div>
+      ) : page === 'archive-study' ? (
+        <div className="max-w-2xl mx-auto px-5 py-10">
+          <div className="flex justify-between items-center mb-8">
+            <button onClick={() => setPage('home')} className="flex items-center gap-1.5 text-[13px] text-slate-600 hover:text-slate-900 transition font-medium">
+              <ArrowLeft size={14} /> 홈
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 mb-1">
+            <BookIcon size={18} className="text-indigo-500" />
+            <h2 className="text-lg font-bold tracking-tight">전체 학습 노트</h2>
+          </div>
+          <p className="text-[13px] text-slate-500 mb-2">아카이브한 모든 PR의 리뷰와 메모를 합산해서 뽑은 학습 주제예요.</p>
+          {globalTopics.length > 0 && (
+            <p className="text-[13px] font-semibold text-slate-600 mb-6">
+              {globalTopics.filter(t => globalStudyChecked[t.key]).length} / {globalTopics.length} 학습 완료
+            </p>
+          )}
+
+          {globalTopics.length === 0 ? (
+            <p className="text-center text-slate-400 text-sm py-16">아직 분석된 PR이 없어요. PR을 열면 자동으로 아카이브되고 학습 주제가 쌓여요.</p>
+          ) : (
+            <div className="space-y-3">
+              {globalTopics.map(topic => {
+                const done = !!globalStudyChecked[topic.key];
+                return (
+                  <div key={topic.key} className={`bg-white border border-slate-300 rounded-2xl p-5 shadow-[0_2px_12px_rgba(15,23,42,0.06)] transition ${done ? 'opacity-70' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => toggleGlobalStudy(topic.key)}
+                        className={`mt-0.5 w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center transition ${
+                          done ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-400 hover:border-slate-500 bg-white'
+                        }`}
+                      >
+                        {done && <CheckIcon size={12} />}
+                      </button>
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className={`text-sm font-bold ${done ? 'line-through text-slate-500 decoration-slate-400' : 'text-slate-900'}`}>{topic.title}</h3>
+                          <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded">
+                            PR {topic.prCount}개 · 코멘트 {topic.count}개
+                          </span>
+                        </div>
+                        <p className="text-[13px] text-slate-600 mt-1.5 leading-relaxed">{topic.desc}</p>
+                        <div className="mt-3 flex flex-col gap-1.5">
+                          {topic.links.map(l => (
+                            <a
+                              key={l.url}
+                              href={l.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+                            >
+                              <ExternalLink size={12} /> {l.label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : page === 'study' ? (
+        <div className="max-w-2xl mx-auto px-5 py-10">
+          <div className="flex justify-between items-center mb-8">
+            <button onClick={() => setPage('review')} className="flex items-center gap-1.5 text-[13px] text-slate-600 hover:text-slate-900 transition font-medium">
+              <ArrowLeft size={14} /> 체크리스트로
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 mb-1">
+            <BookIcon size={18} className="text-indigo-500" />
+            <h2 className="text-lg font-bold tracking-tight">학습 노트</h2>
+          </div>
+          <p className="text-[13px] text-slate-500 mb-2">리뷰 코멘트와 내 메모를 분석해서 공부할 주제를 뽑았어요.</p>
+          {studyTopics.length > 0 && (
+            <p className="text-[13px] font-semibold text-slate-600 mb-6">
+              {studyTopics.filter(t => studyChecked[t.key]).length} / {studyTopics.length} 학습 완료
+            </p>
+          )}
+
+          {studyTopics.length === 0 ? (
+            <p className="text-center text-slate-400 text-sm py-16">아직 분석할 리뷰 코멘트나 메모가 없어요.</p>
+          ) : (
+            <div className="space-y-3">
+              {studyTopics.map(topic => {
+                const done = !!studyChecked[topic.key];
+                return (
+                  <div key={topic.key} className={`bg-white border border-slate-300 rounded-2xl p-5 shadow-[0_2px_12px_rgba(15,23,42,0.06)] transition ${done ? 'opacity-70' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => toggleStudy(topic.key)}
+                        className={`mt-0.5 w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center transition ${
+                          done ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-400 hover:border-slate-500 bg-white'
+                        }`}
+                      >
+                        {done && <CheckIcon size={12} />}
+                      </button>
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className={`text-sm font-bold ${done ? 'line-through text-slate-500 decoration-slate-400' : 'text-slate-900'}`}>{topic.title}</h3>
+                          <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded">관련 코멘트 {topic.count}개</span>
+                        </div>
+                        <p className="text-[13px] text-slate-600 mt-1.5 leading-relaxed">{topic.desc}</p>
+                        <div className="mt-3 flex flex-col gap-1.5">
+                          {topic.links.map(l => (
+                            <a
+                              key={l.url}
+                              href={l.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+                            >
+                              <ExternalLink size={12} /> {l.label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="max-w-2xl mx-auto px-5 py-10">
+          {/* 상단 바 */}
+          <div className="flex justify-between items-center mb-8">
+            <button onClick={() => setPage('home')} className="flex items-center gap-1.5 text-[13px] text-slate-600 hover:text-slate-900 transition font-medium">
+              <ArrowLeft size={14} /> 홈
+            </button>
+            <div className="flex items-center gap-2">
+              {isDemo && <span className="text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md font-semibold tracking-wide">DEMO</span>}
+              <button
+                onClick={() => setPage('study')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900 transition"
+              >
+                <BookIcon size={13} className="text-indigo-500" />
+                학습 노트{studyTopics.length > 0 && ` (${studyTopics.length})`}
+              </button>
+            </div>
+          </div>
+
+          {/* PR 헤더 + 진행률 */}
+          <div className="mb-8">
+            {prInfo && (
+              <h2 className="text-lg font-bold tracking-tight mb-1 leading-snug">
+                {prInfo.title}
+              </h2>
+            )}
+            {prInfo && (
+              <p className="text-[13px] text-slate-500 mb-5">#{prInfo.number} · {prInfo.user?.login}</p>
+            )}
+
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-sm font-semibold text-slate-600">
+                {doneCount}<span className="text-slate-500 font-normal"> / {actionableCount} 반영 완료</span>
+                {skippedCount > 0 && <span className="text-slate-400 font-normal text-xs"> · 리뷰 불필요 {skippedCount}개 제외</span>}
+              </span>
+              <span className={`text-sm font-bold ${progress === 100 ? 'text-emerald-600' : 'text-slate-900'}`}>{progress}%</span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${progress === 100 ? 'bg-emerald-500' : 'bg-slate-900'}`}
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            {progress === 100 && actionableCount > 0 && (
+              <p className="mt-3 text-sm text-emerald-600 font-semibold">모든 리뷰 반영 완료! 리뷰어에게 알려주세요 🎉</p>
+            )}
+          </div>
+
+          {/* 필터 + 정렬 */}
+          <div className="flex items-center justify-between gap-2 mb-5 flex-wrap">
+            <div className="flex gap-1 flex-wrap">
+              <FilterTab value="all" label="전체" count={actionableCount} />
+              <FilterTab value="todo" label="미완료" count={actionableCount - doneCount} />
+              <FilterTab value="done" label="완료" count={doneCount} />
+              {skippedCount > 0 && <FilterTab value="skipped" label="리뷰 불필요" count={skippedCount} />}
+            </div>
+
+            <select
+              value={sortMode}
+              onChange={(e) => { setSortMode(e.target.value); setCurrentStep(0); }}
+              className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[13px] font-medium text-slate-600 focus:outline-none focus:border-slate-400 cursor-pointer"
+            >
+              <option value="file">파일 순</option>
+              <option value="time">시간 순</option>
+              <option value="ai">AI 중요도 순</option>
+              <option value="priority">우선순위(P1~P5) 순</option>
+            </select>
+          </div>
+
+          {/* 빈 상태 */}
+          {threads.length === 0 && (
+            <p className="text-center text-slate-400 text-sm py-16">이 PR에는 리뷰 코멘트가 없어요.</p>
+          )}
+          {threads.length > 0 && filteredThreads.length === 0 && (
+            <p className="text-center text-slate-400 text-sm py-16">
+              {filter === 'todo' ? '남은 항목이 없어요!' : filter === 'skipped' ? '리뷰 불필요로 표시된 항목이 없어요.' : '완료한 항목이 아직 없어요.'}
+            </p>
+          )}
+
+          {/* 페이지네이션 카드 */}
+          {currentThread && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setCurrentStep(Math.max(0, safeStep - 1))}
+                  disabled={safeStep === 0}
+                  className="w-9 h-9 flex items-center justify-center bg-white border border-slate-300 rounded-xl text-slate-500 hover:text-slate-800 hover:border-slate-300 disabled:opacity-30 disabled:pointer-events-none transition"
+                >
+                  <ChevronDown size={16} className="rotate-90" />
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {filteredThreads.length <= 10 ? (
+                    filteredThreads.map((t, i) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setCurrentStep(i)}
+                        className={`rounded-full transition-all ${
+                          i === safeStep
+                            ? 'w-6 h-2 bg-slate-900'
+                            : checkedState[t.id]
+                              ? 'w-2 h-2 bg-emerald-400 hover:bg-emerald-500'
+                              : 'w-2 h-2 bg-slate-400 hover:bg-slate-500'
+                        }`}
+                      />
+                    ))
+                  ) : (
+                    <span className="text-sm font-semibold text-slate-600">{safeStep + 1} <span className="text-slate-500 font-normal">/ {filteredThreads.length}</span></span>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setCurrentStep(Math.min(filteredThreads.length - 1, safeStep + 1))}
+                  disabled={safeStep >= filteredThreads.length - 1}
+                  className="w-9 h-9 flex items-center justify-center bg-white border border-slate-300 rounded-xl text-slate-500 hover:text-slate-800 hover:border-slate-300 disabled:opacity-30 disabled:pointer-events-none transition"
+                >
+                  <ChevronDown size={16} className="-rotate-90" />
+                </button>
+              </div>
+
+              <div className="bg-white border border-slate-300 rounded-2xl shadow-[0_2px_12px_rgba(15,23,42,0.08)] overflow-hidden">
+                {/* 파일 경로 */}
+                <div className="flex items-center gap-1.5 px-5 py-3 bg-slate-100 border-b border-slate-200">
+                  <FileIcon size={13} className="text-slate-500 flex-shrink-0" />
+                  <span className="font-mono text-xs font-medium text-slate-700 truncate">{currentThread.path}</span>
+                  {currentThread.line && <span className="font-mono text-xs text-slate-500 flex-shrink-0">L{currentThread.line}</span>}
+                </div>
+
+                <div className="p-5 space-y-4">
+                  {/* 리뷰어 + 체크 버튼 */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {currentThread.user?.avatar_url ? (
+                        <img src={currentThread.user.avatar_url} alt="" className="w-8 h-8 rounded-full flex-shrink-0 border border-slate-100" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full flex-shrink-0 bg-slate-900 text-white flex items-center justify-center text-xs font-bold">
+                          {(currentThread.user?.login || '?').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{currentThread.user?.login || 'Anonymous'}</p>
+                          {parsePriority(currentThread.body) <= 5 && parsePriority(currentThread.body) !== 99 && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              parsePriority(currentThread.body) === 1 ? 'bg-rose-50 text-rose-600' :
+                              parsePriority(currentThread.body) === 2 ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'
+                            }`}>P{parsePriority(currentThread.body)}</span>
+                          )}
+                          {sortMode === 'ai' && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${importanceLabel(scoreImportance(currentThread)).cls}`}>
+                              {importanceLabel(scoreImportance(currentThread)).text}
+                            </span>
+                          )}
+                          {isSkipped(currentThread) && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
+                              리뷰 불필요{skippedState[currentThread.id] === undefined ? ' · 자동 분류' : ''}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          리뷰어{currentThread.created_at && ` · ${new Date(currentThread.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
+                          {currentThread.replies?.length > 0 && ` · 답글 ${currentThread.replies.length}개`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                      {!isSkipped(currentThread) && (
+                        <button
+                          onClick={() => toggleCheck(currentThread.id)}
+                          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition ${
+                            checkedState[currentThread.id]
+                              ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600'
+                              : 'bg-white border border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400'
+                          }`}
+                        >
+                          <CheckIcon size={15} className={checkedState[currentThread.id] ? '' : 'text-slate-400'} />
+                          {checkedState[currentThread.id] ? '반영 완료' : '반영 미완료'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => toggleSkip(currentThread)}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-semibold border cursor-pointer transition ${
+                          isSkipped(currentThread)
+                            ? 'bg-slate-700 text-white border-slate-700 hover:bg-slate-600'
+                            : 'bg-white text-slate-600 border-slate-300 hover:text-slate-900 hover:border-slate-400 hover:bg-slate-50'
+                        }`}
+                      >
+                        {isSkipped(currentThread) ? '리뷰 필요로 되돌리기' : '리뷰 불필요로 표시'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 코멘트 본문 */}
+                  <p className="text-[14px] leading-relaxed text-slate-900 bg-slate-100 rounded-xl px-4 py-3.5">
+                    {currentThread.body}
+                  </p>
+
+                  {/* 스레드 보기 토글 */}
+                  {currentThread.replies && currentThread.replies.length > 0 && (
+                    <button
+                      onClick={() => setShowThread(prev => ({ ...prev, [currentThread.id]: !prev[currentThread.id] }))}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 transition"
+                    >
+                      <ChevronDown size={13} className={`transition-transform ${showThread[currentThread.id] ? 'rotate-180' : ''}`} />
+                      {showThread[currentThread.id] ? '코멘트 접기' : `이어서 코멘트 보기 (${currentThread.replies.length})`}
+                    </button>
+                  )}
+
+                  {/* 스레드 답글 (내 답글 포함 — 맥락 유지) */}
+                  {currentThread.replies && currentThread.replies.length > 0 && showThread[currentThread.id] && (
+                    <div className="ml-3 pl-4 border-l-2 border-slate-100 space-y-3">
+                      {[...currentThread.replies]
+                        .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0))
+                        .map(reply => {
+                          const isAuthor = prInfo?.user?.login && reply.user?.login === prInfo.user.login;
+                          return (
+                            <div key={reply.id} className="flex items-start gap-2.5">
+                              {reply.user?.avatar_url ? (
+                                <img src={reply.user.avatar_url} alt="" className="w-6 h-6 rounded-full flex-shrink-0 border border-slate-100 mt-0.5" />
+                              ) : (
+                                <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold mt-0.5 ${isAuthor ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                  {(reply.user?.login || '?').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-grow">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-xs font-semibold text-slate-700">{reply.user?.login}</span>
+                                  {isAuthor && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600">나</span>}
+                                  {reply.created_at && (
+                                    <span className="text-[10px] text-slate-400">
+                                      {new Date(reply.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className={`text-[13px] leading-relaxed rounded-lg px-3 py-2 ${isAuthor ? 'bg-indigo-100/70 text-indigo-950' : 'bg-slate-100 text-slate-800'}`}>
+                                  {reply.body}
+                                </p>
+                                {isAuthor && (
+                                  <button
+                                    onClick={() => openVerify(currentThread)}
+                                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-md transition"
+                                  >
+                                    <CodeIcon size={11} /> 수정된 코드 보기
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+
+                  {/* 코드 보기 (사이드 패널 토글) */}
+                  <button
+                    onClick={() => { if (codePanelOpen && panelTab === 'diff') { setCodePanelOpen(false); } else { setCodePanelOpen(true); setPanelTab('diff'); } }}
+                    className={`w-full py-2.5 rounded-xl font-medium text-[13px] flex items-center justify-center gap-1.5 transition ${
+                      codePanelOpen && panelTab === 'diff'
+                        ? 'bg-slate-900 text-white hover:bg-slate-800'
+                        : 'bg-white border border-slate-300 hover:border-slate-400 text-slate-700'
+                    }`}
+                  >
+                    <CodeIcon size={14} />
+                    {codePanelOpen && panelTab === 'diff' ? '코드 패널 닫기' : '코드 보기'}
+                  </button>
+
+                  {/* AI 힌트 — 버튼을 눌렀을 때만 표시 */}
+                  {(!hintVisible[currentThread.id] || !aiSummaries[currentThread.id]?.text || aiSummaries[currentThread.id]?.loading) ? (
+                    <button
+                      onClick={() => {
+                        setHintVisible(prev => ({ ...prev, [currentThread.id]: true }));
+                        handleAiSummary(currentThread);
+                      }}
+                      disabled={aiSummaries[currentThread.id]?.loading}
+                      className="w-full py-2.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl font-medium text-[13px] flex items-center justify-center gap-1.5 transition"
+                    >
+                      <Sparkles size={14} className="text-indigo-500" />
+                      {aiSummaries[currentThread.id]?.loading ? '분석 중...' : 'AI 힌트 받기'}
+                    </button>
+                  ) : (
+                    <div className="bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl text-[13px] text-indigo-950 leading-relaxed">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="font-semibold text-indigo-600 flex items-center gap-1.5 text-xs"><Sparkles size={13} /> AI 힌트</span>
+                        <span className="flex items-center gap-2">
+                          <button onClick={() => handleAiSummary(currentThread, true)} className="text-indigo-400 hover:text-indigo-600 transition" title="다시 분석">
+                            <RefreshCw size={12} />
+                          </button>
+                          <button onClick={() => setHintVisible(prev => ({ ...prev, [currentThread.id]: false }))} className="text-indigo-400 hover:text-indigo-600 transition" title="닫기">
+                            <XIcon size={13} />
+                          </button>
+                        </span>
+                      </div>
+                      {aiSummaries[currentThread.id].text}
+                    </div>
+                  )}
+
+                  {/* PR 답글 입력 (GitHub에 바로 등록) */}
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        value={replyDrafts[currentThread.id] || ''}
+                        onChange={(e) => setReplyDrafts(prev => ({ ...prev, [currentThread.id]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) sendReply(currentThread); }}
+                        placeholder="답글 입력 시 PR에 바로 등록돼요"
+                        className="flex-grow px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-[13px] placeholder:text-slate-500 focus:outline-none focus:border-slate-400 transition"
+                      />
+                      <button
+                        onClick={() => sendReply(currentThread)}
+                        disabled={replySending[currentThread.id] || !(replyDrafts[currentThread.id] || '').trim()}
+                        className="px-3.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition flex items-center justify-center"
+                      >
+                        {replySending[currentThread.id] ? <span className="text-[11px] font-semibold">등록 중</span> : <SendIcon size={14} />}
+                      </button>
+                    </div>
+                    {replyError[currentThread.id] && (
+                      <p className="mt-1.5 text-xs text-rose-600">{replyError[currentThread.id]}</p>
+                    )}
+                  </div>
+
+                  {/* 메모 */}
+                  <input
+                    value={userNotes[currentThread.id] || ''}
+                    onChange={(e) => handleNoteChange(currentThread.id, e.target.value)}
+                    placeholder="메모 남기기..."
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-[13px] placeholder:text-slate-500 focus:outline-none focus:border-slate-400 transition"
+                  />
+
+                  {/* GitHub 링크 */}
+                  <a
+                    href={currentThread.html_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 transition font-medium"
+                  >
+                    <ExternalLink size={12} /> GitHub에서 보기
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 코드 사이드 패널 */}
+      {page === 'review' && codePanelOpen && currentThread && (
+        <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] bg-slate-900 shadow-2xl flex flex-col">
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-800">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <CodeIcon size={13} className="text-slate-500 flex-shrink-0" />
+              <span className="font-mono text-xs text-slate-400 truncate">{currentThread.path}</span>
+              {currentThread.line && <span className="font-mono text-xs text-slate-600 flex-shrink-0">L{currentThread.line}</span>}
+            </div>
+            <button onClick={() => setCodePanelOpen(false)} className="p-1.5 text-slate-500 hover:text-slate-200 transition flex-shrink-0">
+              <XIcon size={16} />
+            </button>
+          </div>
+
+          {/* 패널 탭 */}
+          <div className="flex gap-1 px-3 pt-3">
+            <button
+              onClick={() => setPanelTab('diff')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${panelTab === 'diff' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              코멘트 코드
+            </button>
+            <button
+              onClick={() => { setPanelTab('files'); setFileView(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${panelTab === 'files' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              변경 파일 ({prFiles.length})
+            </button>
+            <button
+              onClick={() => openVerify(currentThread)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${panelTab === 'verify' ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              반영 확인
+            </button>
+          </div>
+
+          <div className="flex-grow overflow-auto p-4">
+            {panelTab === 'diff' && highlightCode(currentThread.diff_hunk, 100)}
+
+            {panelTab === 'verify' && (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">리뷰 당시 코드</p>
+                  <div className="border border-slate-800 rounded-lg p-3">
+                    {highlightCode(currentThread.diff_hunk, 40)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide mb-2">현재 코드 (L{currentThread.line || currentThread.original_line || '?'} 주변)</p>
+                  <div className="border border-emerald-900/60 rounded-lg p-3">
+                    {verifyState?.loading && <p className="text-slate-500 text-xs">불러오는 중...</p>}
+                    {verifyState?.error && <p className="text-rose-400 text-xs">{verifyState.error}</p>}
+                    {verifyState?.content != null && !verifyState.loading && !verifyState.error &&
+                      highlightCode(snippetAround(verifyState.content, currentThread.line || currentThread.original_line), 40)}
+                  </div>
+                  <p className="mt-2 text-[11px] text-slate-500 leading-relaxed">위아래를 비교해서 리뷰 코멘트가 실제로 반영됐는지 확인하세요. 커밋이 쌓이면 라인 위치가 조금 달라질 수 있어요.</p>
+                </div>
+              </div>
+            )}
+
+            {panelTab === 'files' && !fileView && (
+              <div className="space-y-1">
+                {prFiles.length === 0 && <p className="text-slate-500 text-xs">변경 파일 정보가 없어요.</p>}
+                {prFiles.map(f => (
+                  <button
+                    key={f.filename}
+                    onClick={() => openFile(f.filename)}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left hover:bg-slate-800 transition ${f.filename === currentThread.path ? 'bg-slate-800/70' : ''}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      f.status === 'added' ? 'bg-emerald-400' : f.status === 'removed' ? 'bg-rose-400' : 'bg-amber-400'
+                    }`}></span>
+                    <span className="font-mono text-xs text-slate-300 truncate flex-grow">{f.filename}</span>
+                    <span className="text-[10px] font-mono flex-shrink-0">
+                      <span className="text-emerald-400">+{f.additions}</span>{' '}
+                      <span className="text-rose-400">-{f.deletions}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {panelTab === 'files' && fileView && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <button onClick={() => setFileView(null)} className="text-slate-500 hover:text-slate-200 transition flex-shrink-0">
+                    <ArrowLeft size={14} />
+                  </button>
+                  <span className="font-mono text-xs text-slate-400 truncate">{fileView.path}</span>
+                </div>
+                {fileView.loading && <p className="text-slate-500 text-xs">불러오는 중...</p>}
+                {fileView.error && <p className="text-rose-400 text-xs">{fileView.error}</p>}
+                {fileView.content && highlightCode(fileView.content, 500)}
+              </div>
+            )}
+          </div>
+
+          <div className="px-4 py-3 border-t border-slate-800">
+            <a
+              href={panelTab === 'files' && fileView ? (vscodeFileUrl(fileView.path) || toVscodeUrl(currentThread)) : toVscodeUrl(currentThread)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition font-medium"
+            >
+              <ExternalLink size={12} /> VS Code에서 전체 코드 보기
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
